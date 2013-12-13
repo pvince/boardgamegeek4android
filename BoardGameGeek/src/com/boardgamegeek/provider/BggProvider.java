@@ -45,6 +45,8 @@ public class BggProvider extends ContentProvider {
 		addProvider(map, new GamesIdCategoriesIdProvider());
 		addProvider(map, new GamesIdMechanicsProvider());
 		addProvider(map, new GamesIdMechanicsIdProvider());
+		addProvider(map, new GamesIdFamiliesProvider());
+		addProvider(map, new GamesIdFamiliesIdProvider());
 
 		addProvider(map, new GamesRanksProvider());
 		addProvider(map, new GamesRanksIdProvider());
@@ -54,6 +56,7 @@ public class BggProvider extends ContentProvider {
 		addProvider(map, new GamesPublishersIdProvider());
 		addProvider(map, new GamesMechanicsIdProvider());
 		addProvider(map, new GamesCategoriesIdProvider());
+		addProvider(map, new GamesFamiliesIdProvider());
 
 		addProvider(map, new GamesIdPollsProvider());
 		addProvider(map, new GamesIdPollsNameProvider());
@@ -78,6 +81,8 @@ public class BggProvider extends ContentProvider {
 		addProvider(map, new MechanicsIdProvider());
 		addProvider(map, new CategoriesProvider());
 		addProvider(map, new CategoriesIdProvider());
+		addProvider(map, new FamiliesProvider());
+		addProvider(map, new FamiliesIdProvider());
 
 		addProvider(map, new CollectionProvider());
 		addProvider(map, new CollectionIdProvider());

@@ -21,6 +21,7 @@ import com.boardgamegeek.provider.BggContract.Collection;
 import com.boardgamegeek.provider.BggContract.CollectionViewFilters;
 import com.boardgamegeek.provider.BggContract.CollectionViews;
 import com.boardgamegeek.provider.BggContract.Designers;
+import com.boardgamegeek.provider.BggContract.Families;
 import com.boardgamegeek.provider.BggContract.GameColors;
 import com.boardgamegeek.provider.BggContract.GamePollResults;
 import com.boardgamegeek.provider.BggContract.GamePollResultsResult;
@@ -61,7 +62,8 @@ public class BggDatabase extends SQLiteOpenHelper {
 	private static final int VER_COLLECTION = 14;
 	private static final int VER_GAME_COLLECTION_CONFLICT = 15;
 	private static final int VER_PLAYS_START_TIME = 16;
-	private static final int DATABASE_VERSION = VER_PLAYS_START_TIME;
+	private static final int VER_FAMILIES = 17;
+	private static final int DATABASE_VERSION = VER_FAMILIES;
 
 	private Context mContext;
 
@@ -90,12 +92,18 @@ public class BggDatabase extends SQLiteOpenHelper {
 		String CATEGORY_ID = Categories.CATEGORY_ID;
 	}
 
+	public interface GamesFamilies {
+		String GAME_ID = Games.GAME_ID;
+		String FAMILY_ID = Families.FAMILY_ID;
+	}
+
 	interface Tables {
 		String DESIGNERS = "designers";
 		String ARTISTS = "artists";
 		String PUBLISHERS = "publishers";
 		String MECHANICS = "mechanics";
 		String CATEGORIES = "categories";
+		String FAMILIES = "families";
 		String GAMES = "games";
 		String GAME_RANKS = "game_ranks";
 		String GAMES_DESIGNERS = "games_designers";
@@ -103,6 +111,7 @@ public class BggDatabase extends SQLiteOpenHelper {
 		String GAMES_PUBLISHERS = "games_publishers";
 		String GAMES_MECHANICS = "games_mechanics";
 		String GAMES_CATEGORIES = "games_categories";
+		String GAMES_FAMILIES = "games_families";
 		String GAMES_EXPANSIONS = "games_expansions";
 		String COLLECTION = "collection";
 		String BUDDIES = "buddies";
@@ -122,6 +131,7 @@ public class BggDatabase extends SQLiteOpenHelper {
 		String GAMES_PUBLISHERS_JOIN_PUBLISHERS = createJoin(GAMES_PUBLISHERS, PUBLISHERS, Publishers.PUBLISHER_ID);
 		String GAMES_MECHANICS_JOIN_MECHANICS = createJoin(GAMES_MECHANICS, MECHANICS, Mechanics.MECHANIC_ID);
 		String GAMES_CATEGORIES_JOIN_CATEGORIES = createJoin(GAMES_CATEGORIES, CATEGORIES, Categories.CATEGORY_ID);
+		String GAMES_FAMILIES_JOIN_FAMILIES = createJoin(GAMES_FAMILIES, FAMILIES, Families.FAMILY_ID);
 		String GAMES_EXPANSIONS_JOIN_EXPANSIONS = createJoin(GAMES_EXPANSIONS, GAMES, GamesExpansions.EXPANSION_ID,
 			Games.GAME_ID);
 		String POLLS_JOIN_POLL_RESULTS = createJoin(GAME_POLLS, GAME_POLL_RESULTS, GamePolls._ID,
@@ -183,6 +193,7 @@ public class BggDatabase extends SQLiteOpenHelper {
 		buildPublishersTable().create(db);
 		buildMechanicsTable().create(db);
 		buildCategoriesTable().create(db);
+		buildFamilesTable().create(db);
 
 		buildGamesTable().create(db);
 		buildGameRanksTable().create(db);
@@ -191,6 +202,7 @@ public class BggDatabase extends SQLiteOpenHelper {
 		buildGamesPublishersTable().create(db);
 		buildGamesMechanicsTable().create(db);
 		buildGamesCategoriesTable().create(db);
+		buildGamesFamiliesTable().create(db);
 		buildGameExpansionsTable().create(db);
 		buildGamePollsTable().create(db);
 		buildGamePollResultsTable().create(db);
@@ -243,6 +255,16 @@ public class BggDatabase extends SQLiteOpenHelper {
 		return new TableBuilder().setTable(Tables.CATEGORIES).useDefaultPrimaryKey()
 			.addColumn(Categories.CATEGORY_ID, COLUMN_TYPE.INTEGER, true, true)
 			.addColumn(Categories.CATEGORY_NAME, COLUMN_TYPE.TEXT, true);
+	}
+
+	private TableBuilder buildFamilesTable() {
+		return new TableBuilder().setTable(Tables.FAMILIES).useDefaultPrimaryKey()
+			.addColumn(Families.FAMILY_ID, COLUMN_TYPE.INTEGER, true, true)
+			.addColumn(Families.FAMILY_NAME, COLUMN_TYPE.TEXT, true)
+			.addColumn(Families.FAMILY_SORT_NAME, COLUMN_TYPE.TEXT, true)
+			.addColumn(Families.FAMILY_DESCRIPTION, COLUMN_TYPE.TEXT)
+			.addColumn(Families.FAMILY_THUMBNAIL_URL, COLUMN_TYPE.TEXT)
+			.addColumn(Families.FAMILY_IMAGE_URL, COLUMN_TYPE.TEXT);
 	}
 
 	private TableBuilder buildGamesTable() {
@@ -321,6 +343,12 @@ public class BggDatabase extends SQLiteOpenHelper {
 			.addColumn(GamesCategories.GAME_ID, COLUMN_TYPE.INTEGER, true, true, Tables.GAMES, Games.GAME_ID, true)
 			.addColumn(GamesCategories.CATEGORY_ID, COLUMN_TYPE.INTEGER, true, true, Tables.CATEGORIES,
 				Categories.CATEGORY_ID);
+	}
+
+	private TableBuilder buildGamesFamiliesTable() {
+		return new TableBuilder().setTable(Tables.GAMES_FAMILIES).useDefaultPrimaryKey()
+			.addColumn(GamesFamilies.GAME_ID, COLUMN_TYPE.INTEGER, true, true, Tables.GAMES, Games.GAME_ID, true)
+			.addColumn(GamesFamilies.FAMILY_ID, COLUMN_TYPE.INTEGER, true, true, Tables.FAMILIES, Families.FAMILY_ID);
 	}
 
 	private TableBuilder buildCollectionTable() {
@@ -550,6 +578,10 @@ public class BggDatabase extends SQLiteOpenHelper {
 			case VER_GAME_COLLECTION_CONFLICT:
 				addColumn(db, Tables.PLAYS, Plays.START_TIME, COLUMN_TYPE.INTEGER);
 				version = VER_PLAYS_START_TIME;
+			case VER_PLAYS_START_TIME:
+				buildFamilesTable().create(db);
+				buildGamesFamiliesTable().create(db);
+				version = VER_FAMILIES;
 		}
 
 		if (version != DATABASE_VERSION) {
@@ -560,6 +592,7 @@ public class BggDatabase extends SQLiteOpenHelper {
 			dropTable(db, Tables.PUBLISHERS);
 			dropTable(db, Tables.MECHANICS);
 			dropTable(db, Tables.CATEGORIES);
+			dropTable(db, Tables.FAMILIES);
 			dropTable(db, Tables.GAMES);
 			dropTable(db, Tables.GAME_RANKS);
 			dropTable(db, Tables.GAMES_DESIGNERS);
@@ -567,6 +600,7 @@ public class BggDatabase extends SQLiteOpenHelper {
 			dropTable(db, Tables.GAMES_PUBLISHERS);
 			dropTable(db, Tables.GAMES_MECHANICS);
 			dropTable(db, Tables.GAMES_CATEGORIES);
+			dropTable(db, Tables.GAMES_FAMILIES);
 			dropTable(db, Tables.GAMES_EXPANSIONS);
 			dropTable(db, Tables.COLLECTION);
 			dropTable(db, Tables.BUDDIES);

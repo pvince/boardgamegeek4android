@@ -17,6 +17,7 @@ import android.net.Uri;
 import com.boardgamegeek.provider.BggContract.Artists;
 import com.boardgamegeek.provider.BggContract.Categories;
 import com.boardgamegeek.provider.BggContract.Designers;
+import com.boardgamegeek.provider.BggContract.Families;
 import com.boardgamegeek.provider.BggContract.GamePollResults;
 import com.boardgamegeek.provider.BggContract.GamePollResultsResult;
 import com.boardgamegeek.provider.BggContract.GamePolls;
@@ -28,6 +29,7 @@ import com.boardgamegeek.provider.BggContract.Publishers;
 import com.boardgamegeek.provider.BggDatabase.GamesArtists;
 import com.boardgamegeek.provider.BggDatabase.GamesCategories;
 import com.boardgamegeek.provider.BggDatabase.GamesDesigners;
+import com.boardgamegeek.provider.BggDatabase.GamesFamilies;
 import com.boardgamegeek.provider.BggDatabase.GamesMechanics;
 import com.boardgamegeek.provider.BggDatabase.GamesPublishers;
 import com.boardgamegeek.util.ResolverUtils;
@@ -40,6 +42,7 @@ public class RemoteGameHandler extends RemoteBggHandler {
 	private List<Integer> mGamePublisherIds;
 	private List<Integer> mGameMechanicIds;
 	private List<Integer> mGameCategoryIds;
+	private List<Integer> mGameFamilyIds;
 	private List<Integer> mGameExpansionIds;
 	private List<String> mPollNames;
 	private boolean mParsePolls;
@@ -95,6 +98,7 @@ public class RemoteGameHandler extends RemoteBggHandler {
 		mGameMechanicIds = ResolverUtils.queryInts(mResolver, Games.buildMechanicsUri(mGameId), Mechanics.MECHANIC_ID);
 		mGameCategoryIds = ResolverUtils
 			.queryInts(mResolver, Games.buildCategoriesUri(mGameId), Categories.CATEGORY_ID);
+		mGameFamilyIds = ResolverUtils.queryInts(mResolver, Games.buildFamiliesUri(mGameId), Families.FAMILY_ID);
 		mGameExpansionIds = ResolverUtils.queryInts(mResolver, Games.buildExpansionsUri(mGameId),
 			GamesExpansions.EXPANSION_ID);
 		mPollNames = ResolverUtils.queryStrings(mResolver, Games.buildPollsUri(mGameId), GamePolls.POLL_NAME);
@@ -115,6 +119,9 @@ public class RemoteGameHandler extends RemoteBggHandler {
 		}
 		for (Integer categoryId : mGameCategoryIds) {
 			addDelete(Games.buildCategoriesUri(mGameId, categoryId));
+		}
+		for (Integer familyId : mGameFamilyIds) {
+			addDelete(Games.buildFamiliesUri(mGameId, familyId));
 		}
 		for (Integer expansionId : mGameExpansionIds) {
 			addDelete(Games.buildExpansionsUri(mGameId, expansionId));
@@ -156,6 +163,9 @@ public class RemoteGameHandler extends RemoteBggHandler {
 					tag = null;
 				} else if (Tags.CATEGORY.equals(tag)) {
 					parseCategory();
+					tag = null;
+				} else if (Tags.FAMILY.equals(tag)) {
+					parseFamily();
 					tag = null;
 				} else if (Tags.POLL.equals(tag)) {
 					if (mParsePolls) {
@@ -294,6 +304,28 @@ public class RemoteGameHandler extends RemoteBggHandler {
 		if (!mGameCategoryIds.remove(Integer.valueOf(categoryId))) {
 			insertMaybe(Categories.CONTENT_URI, values, categoryId);
 			addInsert(Games.buildCategoriesUri(mGameId), GamesCategories.CATEGORY_ID, categoryId);
+		}
+	}
+
+	private void parseFamily() throws XmlPullParserException, IOException {
+		ContentValues values = new ContentValues();
+		int familyId = parseIntegerAttribute(Tags.ID);
+		values.put(Families.FAMILY_ID, familyId);
+
+		final int depth = mParser.getDepth();
+		int type;
+		while (((type = mParser.next()) != END_TAG || mParser.getDepth() > depth) && type != END_DOCUMENT) {
+			if (type == TEXT) {
+				String name = mParser.getText();
+				values.put(Families.FAMILY_NAME, name);
+				values.put(Families.FAMILY_SORT_NAME, name);
+			}
+		}
+
+		if (!mGameFamilyIds.remove(Integer.valueOf(familyId))) {
+			insertMaybe(Families.CONTENT_URI, values, familyId);
+			addInsert(Games.buildFamiliesUri(mGameId), GamesFamilies.FAMILY_ID, familyId);
+			mResolver.insert(Families.CONTENT_URI, values);
 		}
 	}
 
@@ -515,6 +547,7 @@ public class RemoteGameHandler extends RemoteBggHandler {
 		String PUBLISHER = "boardgamepublisher";
 		String MECHANIC = "boardgamemechanic";
 		String CATEGORY = "boardgamecategory";
+		String FAMILY = "boardgamefamily";
 		String EXPANSION = "boardgameexpansion";
 		String INBOUND = "inbound";
 		// family

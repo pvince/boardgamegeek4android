@@ -89,6 +89,15 @@ public class BggContract {
 		String CATEGORY_NAME = "category_name";
 	}
 
+	interface FamiliesColumns {
+		String FAMILY_ID = "family_id";
+		String FAMILY_NAME = "family_name";
+		String FAMILY_SORT_NAME = "family_sort_name";
+		String FAMILY_DESCRIPTION = "family_description";
+		String FAMILY_THUMBNAIL_URL = "family_thumbnail_url";
+		String FAMILY_IMAGE_URL = "family_image_url";
+	}
+
 	interface GamesExpansionsColumns {
 		String EXPANSION_ID = "expansion_id";
 		String EXPANSION_NAME = "expansion_name";
@@ -216,6 +225,7 @@ public class BggContract {
 	public static final String PATH_PUBLISHERS = "publishers";
 	public static final String PATH_MECHANICS = "mechanics";
 	public static final String PATH_CATEGORIES = "categories";
+	public static final String PATH_FAMILIES = "families";
 	public static final String PATH_EXPANSIONS = "expansions";
 	public static final String PATH_COLLECTION = "collection";
 	public static final String PATH_NOEXPANSIONS = "noexpansions";
@@ -363,6 +373,22 @@ public class BggContract {
 
 		public static Uri buildCategoryUri(long rowId) {
 			return getUriBuilder().appendPath(PATH_CATEGORIES).appendPath(String.valueOf(rowId)).build();
+		}
+
+		public static Uri buildFamiliesUri(int gameId) {
+			return buildLimitedFamiliesUri(gameId, 0);
+		}
+
+		public static Uri buildLimitedFamiliesUri(int gameId, int limitCount) {
+			return getLimitedUriBuilder(gameId, PATH_FAMILIES, limitCount).build();
+		}
+
+		public static Uri buildFamiliesUri(int gameId, int familyId) {
+			return getUriBuilder(gameId, PATH_FAMILIES, familyId).build();
+		}
+
+		public static Uri buildFamilyUri(long rowId) {
+			return getUriBuilder().appendPath(PATH_FAMILIES).appendPath(String.valueOf(rowId)).build();
 		}
 
 		public static Uri buildExpansionsUri(int gameId) {
@@ -613,6 +639,36 @@ public class BggContract {
 		public static int getCategoryId(Uri uri) {
 			return StringUtils.parseInt(uri.getPathSegments().get(1));
 		}
+	}
+
+	public static class Families implements FamiliesColumns, BaseColumns {
+		public static final Uri CONTENT_URI = BASE_CONTENT_URI.buildUpon().appendPath(PATH_FAMILIES).build();
+
+		public static final String CONTENT_TYPE = getContentType("family");
+		public static final String CONTENT_ITEM_TYPE = getContentItemType("family");
+
+		public static final String DEFAULT_SORT = getCollateNoCase(FamiliesColumns.FAMILY_NAME);
+
+		public static Uri buildFamilyUri(int familyId) {
+			return CONTENT_URI.buildUpon().appendPath(String.valueOf(familyId)).build();
+		}
+
+		public static int getFamilyId(Uri uri) {
+			return StringUtils.parseInt(uri.getPathSegments().get(1));
+		}
+	}
+
+	private static String getContentType(String type) {
+		return "vnd.android.cursor.dir/vnd.boardgamegeek." + type;
+	}
+
+	private static String getContentItemType(String type) {
+		return "vnd.android.cursor.item/vnd.boardgamegeek." + type;
+	}
+
+	private static String getCollateNoCase(String column) {
+		return column + " COLLATE NOCASE ASC";
+
 	}
 
 	public static class GamesExpansions implements GamesExpansionsColumns, GamesColumns, BaseColumns {
